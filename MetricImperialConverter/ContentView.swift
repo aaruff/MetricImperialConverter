@@ -7,16 +7,16 @@
 
 import SwiftUI
 
-enum MeasurementSystem {
+enum MeasurementSystem: String, CaseIterable {
     case imperial, metric
 }
 
-enum ImperialLengthUnit: Int {
-   case inch = 0, foot, yard, mile
+enum ImperialLengthUnit: String, CaseIterable {
+   case inch, foot, yard, mile
 }
 
-enum MetricLengthUnit: Int {
-   case millimeter = 0, centimeter, meter, kilometer
+enum MetricLengthUnit: String, CaseIterable {
+   case millimeter, centimeter, meter, kilometer
 }
 
 
@@ -62,9 +62,9 @@ struct ContentView: View {
     
     @State private var unitValue = 0.0
     
-    @State private var fromChoice = MeasurementSystem.imperial
+    @State private var fromMeasurementSystemSelection = MeasurementSystem.imperial
     @State private var fromUnitChoice = ImperialLengthUnit.inch
-    @State private var toChoice = MeasurementSystem.metric
+    @State private var toMeasurementSystemSelection = MeasurementSystem.metric
     @State private var toUnitChoice = MetricLengthUnit.millimeter
     
     
@@ -87,42 +87,52 @@ struct ContentView: View {
                     TextField("Unit Value", value: $unitValue, formatter: unitFormatter)
                         .keyboardType(.decimalPad)
                 }
+
                 Section(header: Text("From")) {
-                    Picker("From", selection: $fromChoice) {
-                        ForEach(fromChoice) { i in
-                            if fromChoice == MeasurementSystem.imperial {
-                                Text(unitSystems[i])
-                            }
-                            else {
-                                
-                            }
+                    Picker("From - Measurement System", selection: $fromMeasurementSystemSelection) {
+                        ForEach(MeasurementSystem.allCases, id: \.self) { system in
+                            Text(system.rawValue)
                         }
                     }
                     .pickerStyle(.segmented)
-                    Picker("From Unit", selection: $fromUnitChoice) {
-                        ForEach(0..<4) { i in
-                            Text(units[fromChoice][i])
+                    // From - Measurement Unit
+                    Picker("From - Unit", selection: $fromUnitChoice) {
+                        if fromMeasurementSystemSelection == MeasurementSystem.imperial {
+                            ForEach(ImperialLengthUnit.allCases, id: \.self) { unit in
+                                Text(unit.rawValue)
+                            }
+                        }
+                        else {
+                            ForEach(MetricLengthUnit.allCases, id: \.self) { unit in
+                                Text(unit.rawValue)
+                            }
                         }
                     }
                     .pickerStyle(.segmented)
                 }
+                
                 Section(header: Text("To")) {
-                    Picker("From", selection: $toChoice) {
-                        ForEach(0..<2) { i in
-                            Text(unitSystems[i])
+                    Picker("To - Measurement System", selection: $toMeasurementSystemSelection) {
+                        ForEach(MeasurementSystem.allCases, id: \.self) { system in
+                            Text(system.rawValue)
                         }
                     }
                     .pickerStyle(.segmented)
-                    Picker("From Unit", selection: $toUnitChoice) {
-                        ForEach(0..<4) { i in
-                            Text(units[toChoice][i])
+                    Picker("To - Unit", selection: $toUnitChoice) {
+                        if toMeasurementSystemSelection == MeasurementSystem.imperial {
+                            ForEach(ImperialLengthUnit.allCases, id: \.self) { unit in
+                                Text(unit.rawValue)
+                            }
+                        }
+                        else {
+                            ForEach(MetricLengthUnit.allCases, id: \.self) { unit in
+                                Text(unit.rawValue)
+                            }
                         }
                     }
                     .pickerStyle(.segmented)
-                    
                 }
             }
-            .navigationBarTitle("Metric to Imperial")
         }
     }
 }
