@@ -21,6 +21,7 @@ enum MetricLengthUnit: String, CaseIterable {
 
 
 struct Metric {
+    let index = 1
     var metricType: MetricLengthUnit
     var lengthValue: Double
     
@@ -39,6 +40,7 @@ struct Metric {
 }
 
 struct Imperial{
+    let index = 0
     var imperialType: ImperialLengthUnit
     var lengthValue: Double
     
@@ -60,13 +62,18 @@ struct ContentView: View {
     private let Imperial = 0
     private let Metric = 1
     
+    private let measurementSystemChoices = MeasurementSystem.allCases
+    private let metricChoices = MetricLengthUnit.allCases
+    private let imperialChoices = ImperialLengthUnit.allCases
+    
     @State private var unitValue = 0.0
     
-    @State private var fromMeasurementSystemSelection = MeasurementSystem.imperial
-    @State private var fromUnitChoice = ImperialLengthUnit.inch
-    @State private var toMeasurementSystemSelection = MeasurementSystem.metric
-    @State private var toUnitChoice = MetricLengthUnit.millimeter
     
+    @State private var fromMeasurementSystemChoice = 0
+    @State private var fromUnitChoice = 0
+    @State private var toMeasurementSystemChoice = 0
+    @State private var toUnitChoice = 0
+
     
     private var convertedUnitValue: Double {
         return 0.0
@@ -89,48 +96,13 @@ struct ContentView: View {
                 }
 
                 Section(header: Text("From")) {
-                    Picker("From - Measurement System", selection: $fromMeasurementSystemSelection) {
-                        ForEach(MeasurementSystem.allCases, id: \.self) { system in
-                            Text(system.rawValue)
+                    Picker("From - Measurement System", selection: $fromMeasurementSystemChoice) {
+                        ForEach(0..<measurementSystemChoices.count, id: \.self) { i in
+                            Text(measurementSystemChoices[i].rawValue)
                         }
                     }
                     .pickerStyle(.segmented)
-                    // From - Measurement Unit
-                    Picker("From - Unit", selection: $fromUnitChoice) {
-                        if fromMeasurementSystemSelection == MeasurementSystem.imperial {
-                            ForEach(ImperialLengthUnit.allCases, id: \.self) { unit in
-                                Text(unit.rawValue)
-                            }
-                        }
-                        else {
-                            ForEach(MetricLengthUnit.allCases, id: \.self) { unit in
-                                Text(unit.rawValue)
-                            }
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                }
-                
-                Section(header: Text("To")) {
-                    Picker("To - Measurement System", selection: $toMeasurementSystemSelection) {
-                        ForEach(MeasurementSystem.allCases, id: \.self) { system in
-                            Text(system.rawValue)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                    Picker("To - Unit", selection: $toUnitChoice) {
-                        if toMeasurementSystemSelection == MeasurementSystem.imperial {
-                            ForEach(ImperialLengthUnit.allCases, id: \.self) { unit in
-                                Text(unit.rawValue)
-                            }
-                        }
-                        else {
-                            ForEach(MetricLengthUnit.allCases, id: \.self) { unit in
-                                Text(unit.rawValue)
-                            }
-                        }
-                    }
-                    .pickerStyle(.segmented)
+                    
                 }
             }
         }
