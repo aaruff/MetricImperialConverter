@@ -21,70 +21,122 @@ enum MetricLengthUnit: String, CaseIterable {
 
 
 struct Metric {
-    let index = 1
-    var metricType: MetricLengthUnit
-    var lengthValue: Double
+    static let typeId = 1
     
-    func toMilliMeter() -> Double {
-        switch metricType {
+    static func inchesToMillimeters(inches: Double) -> Double {
+        return inches*25.4
+        
+    }
+    
+    static func toMilliMeter(unitChoice: MetricLengthUnit, value: Double) -> Double {
+        switch unitChoice {
         case .millimeter:
-            return lengthValue
+            return value
         case .centimeter:
-            return lengthValue*10
+            return value*10
         case .meter:
-            return lengthValue*1000
+            return value*1000
         case .kilometer:
-            return lengthValue*1000000
+            return value*1000000
+        }
+    }
+    static func millimeterToUnit(unitChoice: MetricLengthUnit, value: Double) -> Double {
+        switch unitChoice {
+        case .millimeter:
+            return value
+        case .centimeter:
+            return value/10
+        case .meter:
+            return value/1000
+        case .kilometer:
+            return value/1000000
         }
     }
 }
 
-struct Imperial{
-    let index = 0
-    var imperialType: ImperialLengthUnit
-    var lengthValue: Double
+struct Imperial {
+    static let typeId: Int = 0
     
-    func toInch() -> Double {
-        switch imperialType {
+    static func milimetersToInches(milimeters: Double) -> Double {
+        return milimeters*0.0393701
+    }
+    
+    static func toInch(unitChoice: ImperialLengthUnit, value: Double) -> Double {
+        switch unitChoice {
         case .inch:
-            return lengthValue
+            return value
         case .foot:
-            return lengthValue*12
+            return value*12
         case .yard:
-            return lengthValue*12*3
+            return value*12*3
         case .mile:
-            return lengthValue*12*3*1760
+            return value*12*3*1760
+        }
+    }
+    
+    static func inchToUnit(unitChoice: ImperialLengthUnit, value: Double) -> Double {
+        switch unitChoice {
+        case .inch:
+            return value
+        case .foot:
+            return value/12
+        case .yard:
+            return value/(12*3)
+        case .mile:
+            return value/(12*3*1760)
         }
     }
 }
 
 struct ContentView: View {
-    private let Imperial = 0
-    private let Metric = 1
-    
-    private let measurementSystemChoices = MeasurementSystem.allCases
     private let metricChoices = MetricLengthUnit.allCases
     private let imperialChoices = ImperialLengthUnit.allCases
     
     @State private var unitValue = 0.0
+    @FocusState private var unitValueFocus
     
-    
-    @State private var fromMeasurementSystemChoice = 0
+    @State private var fromMeasurementSystemChoice: Int = 0
     @State private var fromUnitChoice = 0
     @State private var toMeasurementSystemChoice = 0
     @State private var toUnitChoice = 0
 
     
     private var convertedUnitValue: Double {
-        return 0.0
+        // Imperial -> Metric
+        if fromMeasurementSystemChoice == Imperial.typeId && toMeasurementSystemChoice == Metric.typeId {
+            
+            let fromValueInches = Imperial.toInch(unitChoice: ImperialLengthUnit.allCases[fromUnitChoice], value: unitValue)
+            let toValueMillimeters = fromValueInches*25.4
+            return Metric.millimeterToUnit(unitChoice: MetricLengthUnit.allCases[toUnitChoice], value: toValueMillimeters)
+        }
+        // Metric -> Imperial
+        else if fromMeasurementSystemChoice == Metric.typeId && toMeasurementSystemChoice == Imperial.typeId {
+            let fromValueMillimeters = Metric.toMilliMeter(unitChoice: MetricLengthUnit.allCases[toUnitChoice], value: unitValue)
+            let toValueInches = fromValueMillimeters*0.0393701
+            return Imperial.inchToUnit(unitChoice: ImperialLengthUnit.allCases[toUnitChoice], value: toValueInches)
+        }
+        // Metric -> Metric
+        else if fromMeasurementSystemChoice == Metric.typeId && toMeasurementSystemChoice == Metric.typeId {
+            let fromValueMillimeters = Metric.toMilliMeter(unitChoice: MetricLengthUnit.allCases[fromUnitChoice], value: unitValue)
+            return Metric.millimeterToUnit(unitChoice: MetricLengthUnit.allCases[toUnitChoice], value: fromValueMillimeters)
+        }
+        // Imperial -> Imperial
+        else {
+            let fromValueInches = Imperial.toInch(unitChoice: ImperialLengthUnit.allCases[fromUnitChoice], value: unitValue)
+            return Imperial.inchToUnit(unitChoice: ImperialLengthUnit.allCases[toUnitChoice], value: fromValueInches)
+        }
     }
     
     private var unitFormatter = NumberFormatter()
+    private var convertedLengthFormatter = NumberFormatter()
     
     init() {
         unitFormatter.numberStyle = .decimal
         unitFormatter.maximumFractionDigits = 2
         unitFormatter.minimumFractionDigits = 0
+        convertedLengthFormatter.numberStyle = .decimal
+        convertedLengthFormatter.maximumFractionDigits = 6
+        convertedLengthFormatter.minimumFractionDigits = 0
     }
     
     var body: some View {
@@ -93,16 +145,73 @@ struct ContentView: View {
                 Section(header: Text("Unit Value")) {
                     TextField("Unit Value", value: $unitValue, formatter: unitFormatter)
                         .keyboardType(.decimalPad)
+                        .focused($unitValueFocus)
                 }
 
                 Section(header: Text("From")) {
                     Picker("From - Measurement System", selection: $fromMeasurementSystemChoice) {
-                        ForEach(0..<measurementSystemChoices.count, id: \.self) { i in
-                            Text(measurementSystemChoices[i].rawValue)
+                        ForEach(0..<MeasurementSystem.allCases.count, id: \.self) { i in
+                            Text(MeasurementSystem.allCases[i].rawValue)
                         }
                     }
                     .pickerStyle(.segmented)
                     
+                    if fromMeasurementSystemChoice == Imperial.typeId {
+                        Picker("Unit Choice", selection: $fromUnitChoice) {
+                            ForEach(0..<ImperialLengthUnit.allCases.count, id: \.self) { i in
+                                Text(ImperialLengthUnit.allCases[i].rawValue)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                    }
+                    else {
+                        Picker("Unit Choice", selection: $fromUnitChoice) {
+                            ForEach(0..<MetricLengthUnit.allCases.count, id: \.self) { i in
+                                Text(MetricLengthUnit.allCases[i].rawValue)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                    }
+                }
+                
+                Section(header: Text("To")) {
+                    Picker("To - Measurement System", selection: $toMeasurementSystemChoice) {
+                        ForEach(0..<MeasurementSystem.allCases.count, id: \.self) { i in
+                            Text(MeasurementSystem.allCases[i].rawValue)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    
+                    if toMeasurementSystemChoice == Imperial.typeId {
+                        Picker("Unit Choice", selection: $toUnitChoice) {
+                            ForEach(0..<ImperialLengthUnit.allCases.count, id: \.self) { i in
+                                Text(ImperialLengthUnit.allCases[i].rawValue)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                    }
+                    else {
+                        Picker("Unit Choice", selection: $toUnitChoice) {
+                            ForEach(0..<MetricLengthUnit.allCases.count, id: \.self) { i in
+                                Text(MetricLengthUnit.allCases[i].rawValue)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                    }
+                    
+                }
+                
+                Section(header: Text("Converted Unit Value")) {
+                    Text("\(convertedUnitValue as NSNumber, formatter: convertedLengthFormatter)")
+                }
+
+            }
+            .navigationBarTitle(Text("Length Converter"))
+            .toolbar {
+                ToolbarItem(placement: .keyboard) {
+                    Button("Done") {
+                       unitValueFocus = false
+                    }
                 }
             }
         }
